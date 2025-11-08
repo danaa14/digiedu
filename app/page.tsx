@@ -1,29 +1,41 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { CourseCard } from "@/components/course-card"
 import { CreateCourseModal } from "@/components/create-course-modal"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { mockCourses } from "@/lib/data"
+import { getAllCourses, deleteCourse as deleteCourseFromStorage, saveCourse } from "@/lib/data"
 import type { Course } from "@/lib/types"
+import { AuthGuard } from "@/components/auth-guard"
+import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
 
-export default function DashboardPage() {
-  const [courses, setCourses] = useState(mockCourses)
+function DashboardContent() {
+  const [courses, setCourses] = useState<Course[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const { user } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    setCourses(getAllCourses())
+  }, [])
 
   const handleDelete = (id: string) => {
-    setCourses(courses.filter((c) => c.id !== id))
+    deleteCourseFromStorage(id)
+    setCourses(getAllCourses())
   }
 
   const handleContinue = (id: string) => {
     console.log("[v0] Continue course:", id)
-    // TODO: Navigate to course detail page
+    router.push(`/course/${id}`)
   }
 
   const handleCourseCreated = (course: Course) => {
-    setCourses((prev) => [course, ...prev])
+    console.log("[v0] Saving new course to storage:", course)
+    saveCourse(course)
+    setCourses(getAllCourses())
   }
 
   return (
@@ -34,10 +46,10 @@ export default function DashboardPage() {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 text-balance">
-            {"Welcome to My Custom Course"}
+            {`Welcome back, ${user?.name}!`}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-            {"Create your own personalized AI-powered learning experience."}
+            Create your own personalized AI-powered learning experience.
           </p>
         </div>
 
@@ -53,8 +65,8 @@ export default function DashboardPage() {
             <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <Plus className="w-12 h-12 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">{"No courses yet"}</h3>
-            <p className="text-muted-foreground mb-6">{"Get started by creating your first AI-powered course"}</p>
+            <h3 className="text-xl font-semibold text-foreground mb-2">No courses yet</h3>
+            <p className="text-muted-foreground mb-6">Get started by creating your first AI-powered course</p>
           </div>
         )}
 
@@ -65,7 +77,7 @@ export default function DashboardPage() {
           className="fixed bottom-8 right-8 rounded-full h-14 px-6 shadow-lg hover:shadow-xl transition-shadow"
         >
           <Plus className="w-5 h-5 mr-2" />
-          {"Create New Course"}
+          Create New Course
         </Button>
       </main>
 
@@ -76,5 +88,13 @@ export default function DashboardPage() {
         onCourseCreated={handleCourseCreated}
       />
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <AuthGuard>
+      <DashboardContent />
+    </AuthGuard>
   )
 }

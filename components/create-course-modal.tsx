@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { CourseFormData, DifficultyLevel, LearningStyle, Course } from "@/lib/types"
 import { hobbies } from "@/lib/hobbies"
 import { Loader2, Sparkles } from "lucide-react"
+import { getChapterCountForDifficulty } from "@/lib/course-utils"
 
 interface CreateCourseModalProps {
   open: boolean
@@ -43,59 +44,60 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
 
   const generateCourse = async () => {
     setIsGenerating(true)
+    console.log("[v0] Generating course with data:", formData)
 
-    // TODO: Replace with actual n8n webhook call
-    // const response = await fetch('YOUR_N8N_WEBHOOK_URL', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(formData)
-    // })
-    // const aiGeneratedCourse = await response.json()
+    try {
+      const response = await fetch("/api/generate-course", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
 
-    // Mock AI generation with delay
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+      const data = await response.json()
+      console.log("[v0] API response:", data)
 
-    const mockGenerated: Course = {
-      id: Date.now().toString(),
-      title: `${formData.topic} Mastery Course`,
-      description: `A comprehensive ${formData.level.toLowerCase()}-level course on ${formData.topic}, tailored to your interests in ${formData.hobbies.join(", ")}.`,
-      difficulty: formData.level,
-      progress: 0,
-      modules: [
-        {
-          id: "m1",
-          title: `Introduction to ${formData.topic}`,
-          lessons: ["Fundamentals", "Core Concepts", "Getting Started"],
-          outcomes: ["Understand basics", "Build foundation"],
-        },
-        {
-          id: "m2",
-          title: "Intermediate Techniques",
-          lessons: ["Advanced concepts", "Practical applications"],
-          outcomes: ["Apply knowledge", "Build projects"],
-        },
-        {
-          id: "m3",
-          title: "Advanced Mastery",
-          lessons: ["Expert strategies", "Real-world projects"],
-          outcomes: ["Master the subject", "Create portfolio"],
-        },
-      ],
-      requirements: difficultyInfo[formData.level],
-      createdAt: new Date(),
-      hobbies: formData.hobbies,
-      learningStyle: formData.learningStyle,
+      if (data.success) {
+        const aiCourse = data.course
+        const chapters = aiCourse.chapters.map((ch: any, idx: number) => ({
+          id: `chapter-${idx + 1}`,
+          title: ch.title,
+          content: "", // Will be generated when viewing the chapter
+          order: ch.order,
+          isCompleted: false,
+        }))
+
+        const mockGenerated: Course = {
+          id: Date.now().toString(),
+          title: aiCourse.title,
+          description: aiCourse.description,
+          difficulty: formData.level,
+          progress: 0,
+          modules: [],
+          requirements: difficultyInfo[formData.level],
+          createdAt: new Date(),
+          hobbies: formData.hobbies,
+          learningStyle: formData.learningStyle,
+          chapters,
+        }
+
+        console.log("[v0] Generated course:", mockGenerated)
+        setGeneratedCourse(mockGenerated)
+      } else {
+        throw new Error("Failed to generate course")
+      }
+    } catch (error) {
+      console.error("[v0] Error generating course:", error)
+      alert("Failed to generate course. Please try again or check your API key.")
+    } finally {
+      setIsGenerating(false)
     }
-
-    setGeneratedCourse(mockGenerated)
-    setIsGenerating(false)
   }
 
   const handleSaveCourse = () => {
     if (generatedCourse) {
+      console.log("[v0] Saving course:", generatedCourse)
       onCourseCreated(generatedCourse)
       onOpenChange(false)
-      // Reset form
       setFormData({
         topic: "",
         level: "Beginner",
@@ -104,6 +106,11 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
       })
       setGeneratedCourse(null)
     }
+  }
+
+  const getDifficultyDescription = (level: DifficultyLevel) => {
+    const chapterCount = getChapterCountForDifficulty(level)
+    return `${difficultyInfo[level]} ${chapterCount} chapters.`
   }
 
   return (
@@ -120,7 +127,7 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
             {/* Topic Input */}
             <div className="space-y-2">
               <Label htmlFor="topic" className="text-base font-semibold">
-                {"What do you want to learn or achieve?"}
+                What do you want to learn or achieve?
               </Label>
               <Input
                 id="topic"
@@ -133,7 +140,7 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
 
             {/* Difficulty Level */}
             <div className="space-y-3">
-              <Label className="text-base font-semibold">{"Difficulty Level"}</Label>
+              <Label className="text-base font-semibold">Difficulty Level</Label>
               <RadioGroup
                 value={formData.level}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, level: value as DifficultyLevel }))}
@@ -149,7 +156,7 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
                       <Label htmlFor={level} className="font-semibold cursor-pointer">
                         {level}
                       </Label>
-                      <p className="text-sm text-muted-foreground mt-1">{difficultyInfo[level]}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{getDifficultyDescription(level)}</p>
                     </div>
                   </div>
                 ))}
@@ -158,7 +165,7 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
 
             {/* Hobbies Checklist */}
             <div className="space-y-3">
-              <Label className="text-base font-semibold">{"Select Your Hobbies (Choose multiple)"}</Label>
+              <Label className="text-base font-semibold">Select Your Hobbies (Choose multiple)</Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {hobbies.map((hobby) => (
                   <div
@@ -183,7 +190,7 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
             {/* Learning Style */}
             <div className="space-y-2">
               <Label htmlFor="learning-style" className="text-base font-semibold">
-                {"Preferred Learning Style (Optional)"}
+                Preferred Learning Style (Optional)
               </Label>
               <Select
                 value={formData.learningStyle}
@@ -193,9 +200,9 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
                   <SelectValue placeholder="Select a learning style" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Visual">{"Visual"}</SelectItem>
-                  <SelectItem value="Practical / Hands-on">{"Practical / Hands-on"}</SelectItem>
-                  <SelectItem value="Theoretical">{"Theoretical"}</SelectItem>
+                  <SelectItem value="Visual">Visual</SelectItem>
+                  <SelectItem value="Practical / Hands-on">Practical / Hands-on</SelectItem>
+                  <SelectItem value="Theoretical">Theoretical</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -210,12 +217,12 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
               {isGenerating ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  {"Generating Your Course..."}
+                  Generating Your Course...
                 </>
               ) : (
                 <>
                   <Sparkles className="w-5 h-5 mr-2" />
-                  {"Generate My Custom Course"}
+                  Generate My Custom Course
                 </>
               )}
             </Button>
@@ -230,25 +237,27 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
               </div>
 
               <div>
-                <h4 className="font-semibold text-foreground mb-2">{"Course Modules:"}</h4>
+                <h4 className="font-semibold text-foreground mb-2">
+                  Course Chapters: {generatedCourse.chapters?.length || 0}
+                </h4>
                 <ul className="space-y-2">
-                  {generatedCourse.modules.map((module, idx) => (
-                    <li key={module.id} className="flex items-start gap-2">
+                  {generatedCourse.chapters?.map((chapter, idx) => (
+                    <li key={chapter.id} className="flex items-start gap-2">
                       <span className="font-semibold text-primary">{idx + 1}.</span>
-                      <span className="text-foreground">{module.title}</span>
+                      <span className="text-foreground">{chapter.title}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-semibold text-foreground mb-1">{"Requirements:"}</h4>
+                <h4 className="font-semibold text-foreground mb-1">Requirements:</h4>
                 <p className="text-sm text-muted-foreground">{generatedCourse.requirements}</p>
               </div>
 
               {generatedCourse.hobbies.length > 0 && (
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">{"Tailored to your interests:"}</h4>
+                  <h4 className="font-semibold text-foreground mb-2">Tailored to your interests:</h4>
                   <div className="flex flex-wrap gap-2">
                     {generatedCourse.hobbies.map((hobby) => {
                       const hobbyData = hobbies.find((h) => h.label === hobby)
@@ -265,10 +274,10 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
 
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setGeneratedCourse(null)} className="flex-1">
-                {"Regenerate"}
+                Regenerate
               </Button>
               <Button onClick={handleSaveCourse} className="flex-1">
-                {"Save Course"}
+                Save Course
               </Button>
             </div>
           </div>

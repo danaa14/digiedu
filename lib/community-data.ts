@@ -9,6 +9,7 @@ export interface CommunityPost {
     difficulty: "Beginner" | "Intermediate" | "Advanced"
   }
   content: string
+  hashtags: string[]
   progress: number
   likes: number
   comments: number
@@ -22,6 +23,7 @@ export const mockCommunityPosts: CommunityPost[] = [
     course: { title: "Photography Composition", difficulty: "Intermediate" },
     content:
       "Just completed the Rule of Thirds module! My photos are already looking so much better. The AI really understood my style preferences.",
+    hashtags: ["photography", "progress", "learning"],
     progress: 65,
     likes: 24,
     comments: 8,
@@ -33,6 +35,7 @@ export const mockCommunityPosts: CommunityPost[] = [
     course: { title: "Web Development Mastery", difficulty: "Beginner" },
     content:
       "Loving how the course integrated my interest in gaming! Building a game review website as my final project.",
+    hashtags: ["webdev", "gaming", "milestone"],
     progress: 30,
     likes: 15,
     comments: 5,
@@ -44,6 +47,7 @@ export const mockCommunityPosts: CommunityPost[] = [
     course: { title: "Spanish Language Immersion", difficulty: "Advanced" },
     content:
       "The AI incorporated my love for travel and cooking into the lessons. Practicing Spanish recipes has been an amazing way to learn!",
+    hashtags: ["language", "spanish", "cooking"],
     progress: 85,
     likes: 42,
     comments: 12,
@@ -55,6 +59,7 @@ export const mockCommunityPosts: CommunityPost[] = [
     course: { title: "Data Science Fundamentals", difficulty: "Intermediate" },
     content:
       "Halfway through and already applying what I learned at work. The practical approach really suits my learning style.",
+    hashtags: ["datascience", "career", "progress"],
     progress: 50,
     likes: 31,
     comments: 6,
@@ -65,9 +70,30 @@ export const mockCommunityPosts: CommunityPost[] = [
     author: { name: "Lisa Thompson", avatar: "LT" },
     course: { title: "Yoga & Mindfulness", difficulty: "Beginner" },
     content: "This course has transformed my daily routine. The AI tailored it perfectly to my wellness goals!",
+    hashtags: ["wellness", "yoga", "mindfulness"],
     progress: 95,
     likes: 56,
     comments: 18,
     timestamp: new Date("2025-01-07T14:10:00"),
   },
 ]
+
+export function savePosts(posts: CommunityPost[]) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("community_posts", JSON.stringify(posts))
+  }
+}
+
+export function loadPosts(): CommunityPost[] {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("community_posts")
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      return parsed.map((p: any) => ({
+        ...p,
+        timestamp: new Date(p.timestamp),
+      }))
+    }
+  }
+  return mockCommunityPosts
+}

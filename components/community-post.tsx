@@ -70,14 +70,21 @@ export function CommunityPostCard({ post }: CommunityPostCardProps) {
       {/* Content */}
       <p className="text-foreground mb-4 text-pretty leading-relaxed">{post.content}</p>
 
+      {post.hashtags && post.hashtags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {post.hashtags.map((tag, index) => (
+            <Badge key={index} variant="outline" className="text-primary border-primary/30 bg-primary/5">
+              #{tag}
+            </Badge>
+          ))}
+        </div>
+      )}
+
       {/* Progress */}
       <div className="mb-4">
         <div className="flex items-center justify-between text-sm mb-2">
-          <span className="text-muted-foreground">{"Course Progress"}</span>
-          <span className="font-semibold text-primary">
-            {post.progress}
-            {"%"}
-          </span>
+          <span className="text-muted-foreground">Course Progress</span>
+          <span className="font-semibold text-primary">{post.progress}%</span>
         </div>
         <Progress value={post.progress} className="h-2" />
       </div>

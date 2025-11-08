@@ -66,3 +66,51 @@ export const mockCourses: Course[] = [
     learningStyle: "Visual",
   },
 ]
+
+export function getAllCourses(): Course[] {
+  if (typeof window === "undefined") return mockCourses
+
+  const stored = localStorage.getItem("user-courses")
+  if (!stored) return mockCourses
+
+  try {
+    const userCourses = JSON.parse(stored) as Course[]
+    // Merge user courses with mock courses, user courses take priority
+    const mockCoursesMap = new Map(mockCourses.map((c) => [c.id, c]))
+    userCourses.forEach((c) => mockCoursesMap.set(c.id, c))
+    return Array.from(mockCoursesMap.values())
+  } catch {
+    return mockCourses
+  }
+}
+
+export function getCourseById(id: string): Course | null {
+  const courses = getAllCourses()
+  return courses.find((c) => c.id === id) || null
+}
+
+export function saveCourse(course: Course) {
+  if (typeof window === "undefined") return
+
+  const courses = getAllCourses()
+  const index = courses.findIndex((c) => c.id === course.id)
+
+  if (index >= 0) {
+    courses[index] = course
+  } else {
+    courses.push(course)
+  }
+
+  // Save all user-created courses (not mock courses)
+  const userCourses = courses.filter((c) => !["1", "2", "3"].includes(c.id))
+  localStorage.setItem("user-courses", JSON.stringify(userCourses))
+}
+
+export function deleteCourse(id: string) {
+  if (typeof window === "undefined") return
+
+  const courses = getAllCourses()
+  const filtered = courses.filter((c) => c.id !== id)
+  const userCourses = filtered.filter((c) => !["1", "2", "3"].includes(c.id))
+  localStorage.setItem("user-courses", JSON.stringify(userCourses))
+}

@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Onest } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { AuthProvider } from "@/lib/auth-context"
 import "./globals.css"
 
 const onest = Onest({ subsets: ["latin"], weight: ["400"] })
@@ -37,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${onest.className} font-sans antialiased`}>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
         <Analytics />
       </body>
     </html>

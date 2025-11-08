@@ -1,9 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Home, User, Users } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { Home, User, Users, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth-context"
+import { Button } from "@/components/ui/button"
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: Home },
@@ -13,6 +15,13 @@ const navItems = [
 
 export function Navigation() {
   const pathname = usePathname()
+  const { user, logout } = useAuth()
+  const router = useRouter()
+
+  const handleLogout = () => {
+    logout()
+    router.push("/login")
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border">
@@ -20,9 +29,9 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">{"M"}</span>
+              <span className="text-primary-foreground font-bold text-lg">M</span>
             </div>
-            <span className="font-bold text-xl text-foreground">{"My Custom Course"}</span>
+            <span className="font-bold text-xl text-foreground">My Custom Course</span>
           </div>
 
           <div className="flex items-center gap-1">
@@ -45,6 +54,14 @@ export function Navigation() {
                 </Link>
               )
             })}
+
+            <div className="ml-4 flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{user?.name}</span>
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </div>
