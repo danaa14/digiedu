@@ -1,0 +1,17 @@
+export const hobbies = [
+  { emoji: "🎨", label: "Art" },
+  { emoji: "🎸", label: "Music" },
+  { emoji: "🧠", label: "Puzzles" },
+  { emoji: "🧘", label: "Yoga" },
+  { emoji: "🍳", label: "Cooking" },
+  { emoji: "🎮", label: "Gaming" },
+  { emoji: "📷", label: "Photography" },
+  { emoji: "💻", label: "Technology" },
+  { emoji: "📚", label: "Reading" },
+  { emoji: "🏃", label: "Sports" },
+  { emoji: "✈️", label: "Travel" },
+  { emoji: "🌱", label: "Gardening" },
+  { emoji: "🧵", label: "Crafting" },
+  { emoji: "🎬", label: "Movies" },
+  { emoji: "🐾", label: "Animals" },
+] as const

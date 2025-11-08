@@ -1,0 +1,73 @@
+export interface CommunityPost {
+  id: string
+  author: {
+    name: string
+    avatar: string
+  }
+  course: {
+    title: string
+    difficulty: "Beginner" | "Intermediate" | "Advanced"
+  }
+  content: string
+  progress: number
+  likes: number
+  comments: number
+  timestamp: Date
+}
+
+export const mockCommunityPosts: CommunityPost[] = [
+  {
+    id: "1",
+    author: { name: "Sarah Johnson", avatar: "SJ" },
+    course: { title: "Photography Composition", difficulty: "Intermediate" },
+    content:
+      "Just completed the Rule of Thirds module! My photos are already looking so much better. The AI really understood my style preferences.",
+    progress: 65,
+    likes: 24,
+    comments: 8,
+    timestamp: new Date("2025-01-08T10:30:00"),
+  },
+  {
+    id: "2",
+    author: { name: "Mike Chen", avatar: "MC" },
+    course: { title: "Web Development Mastery", difficulty: "Beginner" },
+    content:
+      "Loving how the course integrated my interest in gaming! Building a game review website as my final project.",
+    progress: 30,
+    likes: 15,
+    comments: 5,
+    timestamp: new Date("2025-01-08T09:15:00"),
+  },
+  {
+    id: "3",
+    author: { name: "Emma Rodriguez", avatar: "ER" },
+    course: { title: "Spanish Language Immersion", difficulty: "Advanced" },
+    content:
+      "The AI incorporated my love for travel and cooking into the lessons. Practicing Spanish recipes has been an amazing way to learn!",
+    progress: 85,
+    likes: 42,
+    comments: 12,
+    timestamp: new Date("2025-01-08T08:45:00"),
+  },
+  {
+    id: "4",
+    author: { name: "David Park", avatar: "DP" },
+    course: { title: "Data Science Fundamentals", difficulty: "Intermediate" },
+    content:
+      "Halfway through and already applying what I learned at work. The practical approach really suits my learning style.",
+    progress: 50,
+    likes: 31,
+    comments: 6,
+    timestamp: new Date("2025-01-07T16:20:00"),
+  },
+  {
+    id: "5",
+    author: { name: "Lisa Thompson", avatar: "LT" },
+    course: { title: "Yoga & Mindfulness", difficulty: "Beginner" },
+    content: "This course has transformed my daily routine. The AI tailored it perfectly to my wellness goals!",
+    progress: 95,
+    likes: 56,
+    comments: 18,
+    timestamp: new Date("2025-01-07T14:10:00"),
+  },
+]
