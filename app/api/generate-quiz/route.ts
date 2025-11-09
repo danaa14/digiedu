@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const chapterTitles = chapters.map((c) => c.title).join(", ")
 
     const { object: generatedQuiz } = await generateObject({
-      model: "openai/gpt-4o-mini",
+      model: "openai/gpt-4.1-nano",
       schema: quizSchema,
       prompt: `You are an expert educator creating a comprehensive final exam. Create a final quiz for the following course:
 

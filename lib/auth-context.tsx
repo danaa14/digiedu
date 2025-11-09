@@ -1,81 +1,83 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import React, { createContext, useContext, useEffect, useState } from "react"
+import { account, databases } from "./appwrite"
+import { ID } from "appwrite"
 
 interface User {
+  $id: string
   name: string
   email?: string
 }
 
 interface AuthContextType {
   user: User | null
-  login: (name: string, password: string) => boolean
-  signup: (name: string, password: string) => boolean
-  logout: () => void
   isAuthenticated: boolean
+  loading: boolean
+  login: (email: string, password: string) => Promise<boolean>
+  signup: (name: string, email: string, password: string) => Promise<boolean>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing session in localStorage
-    const savedUser = localStorage.getItem("user")
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
+    // Try fetching current session
+    const getUser = async () => {
+      try {
+        const currentUser = await account.get()
+        setUser(currentUser)
+      } catch {
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
-    setIsLoading(false)
+
+    getUser()
   }, [])
 
-  const login = (name: string, password: string): boolean => {
-    // Simple validation for demo purposes
-    if (name && password.length >= 6) {
-      const userData = { name }
-      setUser(userData)
-      localStorage.setItem("user", JSON.stringify(userData))
+  const login = async (email: string, password: string) => {
+    try {
+      await account.createEmailPasswordSession(email, password)
+      const currentUser = await account.get()
+      setUser(currentUser)
       return true
+    } catch (err) {
+      console.error("Login error:", err)
+      return false
     }
-    return false
   }
 
-  const signup = (name: string, password: string): boolean => {
-    // Simple validation for demo purposes
-    if (name && password.length >= 6) {
-      const userData = { name }
-      setUser(userData)
-      localStorage.setItem("user", JSON.stringify(userData))
+  const signup = async (name: string, email: string, password: string) => {
+    try {
+      await account.create(ID.unique(), email, password, name)
+      await login(email, password)
       return true
+    } catch (err) {
+      console.error("Signup error:", err)
+      return false
     }
-    return false
   }
 
-  const logout = () => {
+  const logout = async () => {
+    await account.deleteSession("current")
     setUser(null)
-    localStorage.removeItem("user")
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isAuthenticated: !!user }}>
-      {children}
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, signup, logout }}>
+      {!loading && children}
     </AuthContext.Provider>
   )
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-  return context
+export const useAuth = () => {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider")
+  return ctx
 }

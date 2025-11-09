@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const { courseTitle, chapterTitle, difficulty, hobbies, learningStyle } = body
 
     const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: "openai/gpt-4.1-nano",
       prompt: `You are an expert educational content creator. Generate comprehensive, engaging chapter content for an online course.
 
 Course Title: ${courseTitle}

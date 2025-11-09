@@ -10,7 +10,8 @@ interface GenerateCourseRequest {
   learningStyle?: string
 }
 
-export const runtime = "edge"
+// Prefer Node runtime while testing (Edge can cause issues)
+export const runtime = "nodejs"
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     })
 
     const { object: generatedCourse } = await generateObject({
-      model: "openai/gpt-4o-mini",
+      model: "openai/gpt-4.1-nano",
       schema: courseSchema,
       prompt: `You are an expert course designer. Create a comprehensive course structure for the following:
 
@@ -57,12 +58,13 @@ The course should be tailored to a ${level.toLowerCase()} learner and incorporat
       course: generatedCourse,
       success: true,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error("[v0] Error generating course:", error)
     return NextResponse.json(
       {
-        error: "Failed to generate course",
         success: false,
+        error: error?.message || "Failed to generate course",
+        stack: process.env.NODE_ENV === "development" ? error?.stack : undefined,
       },
       { status: 500 },
     )

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -13,49 +13,59 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     password: "",
-    confirmPassword: "",
   })
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
   const { signup, isAuthenticated } = useAuth()
   const router = useRouter()
 
-  if (isAuthenticated) {
-    router.push("/")
-    return null
-  }
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/")
+    }
+  }, [isAuthenticated, router])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // ✅ Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setLoading(true)
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
-      return
-    }
-
-    const success = signup(formData.name, formData.password)
-
-    if (success) {
-      router.push("/")
-    } else {
-      setError("Invalid credentials. Password must be at least 6 characters.")
+    try {
+      const success = await signup(formData.name, formData.email, formData.password)
+      if (success) {
+        router.push("/")
+      } else {
+        setError("Signup failed. Please try again.")
+      }
+    } catch (err) {
+      console.error(err)
+      setError("Unexpected error during signup.")
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
+        {/* Logo/Branding */}
         <div className="flex flex-col items-center gap-4 mb-8">
           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
             <span className="text-primary-foreground font-bold text-3xl">M</span>
           </div>
           <div className="text-center">
             <h1 className="text-3xl font-bold text-foreground text-balance">Create Account</h1>
-            <p className="text-muted-foreground mt-2">Join us and start your learning journey</p>
+            <p className="text-muted-foreground mt-2">
+              Start your learning journey today
+            </p>
           </div>
         </div>
 
+        {/* Signup Card */}
         <div className="bg-card rounded-2xl border border-border p-8 shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -64,6 +74,7 @@ export default function SignupPage() {
               </div>
             )}
 
+            {/* Name Field */}
             <div className="space-y-2">
               <Label htmlFor="name" className="text-foreground font-medium">
                 Name
@@ -79,6 +90,23 @@ export default function SignupPage() {
               />
             </div>
 
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-foreground font-medium">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+                className="h-12"
+              />
+            </div>
+
+            {/* Password Field */}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-foreground font-medium">
                 Password
@@ -87,10 +115,11 @@ export default function SignupPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="At least 6 characters"
+                  placeholder="Create a password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
+                  minLength={6}
                   className="h-12 pr-12"
                 />
                 <button
@@ -104,31 +133,26 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-foreground font-medium">
-                Confirm Password
-              </Label>
-              <Input
-                id="confirmPassword"
-                type={showPassword ? "text" : "password"}
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-                className="h-12"
-              />
-            </div>
-
-            <Button type="submit" className="w-full h-12 text-base font-medium" size="lg">
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-medium"
+              size="lg"
+              disabled={loading}
+            >
               <UserPlus className="w-5 h-5 mr-2" />
-              Sign Up
+              {loading ? "Creating account..." : "Sign Up"}
             </Button>
           </form>
 
+          {/* Login Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
-              <button onClick={() => router.push("/login")} className="text-primary font-medium hover:underline">
+              <button
+                onClick={() => router.push("/login")}
+                className="text-primary font-medium hover:underline"
+              >
                 Sign in
               </button>
             </p>

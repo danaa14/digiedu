@@ -43,55 +43,67 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
   }
 
   const generateCourse = async () => {
-    setIsGenerating(true)
-    console.log("[v0] Generating course with data:", formData)
+  setIsGenerating(true)
+  console.log("[v0] Generating course with data:", formData)
 
-    try {
-      const response = await fetch("/api/generate-course", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
+  try {
+    const response = await fetch("/api/generate-course", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    })
 
-      const data = await response.json()
-      console.log("[v0] API response:", data)
-
-      if (data.success) {
-        const aiCourse = data.course
-        const chapters = aiCourse.chapters.map((ch: any, idx: number) => ({
-          id: `chapter-${idx + 1}`,
-          title: ch.title,
-          content: "", // Will be generated when viewing the chapter
-          order: ch.order,
-          isCompleted: false,
-        }))
-
-        const mockGenerated: Course = {
-          id: Date.now().toString(),
-          title: aiCourse.title,
-          description: aiCourse.description,
-          difficulty: formData.level,
-          progress: 0,
-          modules: [],
-          requirements: difficultyInfo[formData.level],
-          createdAt: new Date(),
-          hobbies: formData.hobbies,
-          learningStyle: formData.learningStyle,
-          chapters,
-        }
-
-        console.log("[v0] Generated course:", mockGenerated)
-        setGeneratedCourse(mockGenerated)
-      } else {
-        throw new Error("Failed to generate course")
-      }
-    } catch (error) {
-      console.error("[v0] Error generating course:", error)
-      alert("Failed to generate course. Please try again or check your API key.")
-    } finally {
-      setIsGenerating(false)
+    // check if the server responded OK
+    if (!response.ok) {
+      const text = await response.text()
+      console.error("[v0] Server responded with non-OK status:", response.status, text)
+      alert(`Server error (${response.status}). Check the console for details.`)
+      return
     }
+
+    const data = await response.json()
+    console.log("[v0] API response:", data)
+
+    // ✅ more robust handling of API success/error
+    if (data?.success && data.course) {
+      const aiCourse = data.course
+
+      const chapters = (aiCourse.chapters || []).map((ch: any, idx: number) => ({
+        id: `chapter-${idx + 1}`,
+        title: ch.title,
+        content: "",
+        order: ch.order ?? idx + 1,
+        isCompleted: false,
+      }))
+
+      const mockGenerated: Course = {
+        id: Date.now().toString(),
+        title: aiCourse.title || "Untitled Course",
+        description: aiCourse.description || "No description available.",
+        difficulty: formData.level,
+        progress: 0,
+        modules: [],
+        requirements: difficultyInfo[formData.level],
+        createdAt: new Date(),
+        hobbies: formData.hobbies,
+        learningStyle: formData.learningStyle,
+        chapters,
+      }
+
+      console.log("[v0] Generated course:", mockGenerated)
+      setGeneratedCourse(mockGenerated)
+    } else {
+      console.error("[v0] API returned error object:", data)
+      alert(data.error || "Course generation failed. Check your API route or key.")
+    }
+  } catch (error) {
+    console.error("[v0] Exception while generating course:", error)
+    alert(`Failed to generate course. Error: ${error instanceof Error ? error.message : String(error)}`)
+  } finally {
+    setIsGenerating(false)
   }
+}
+
 
   const handleSaveCourse = () => {
     if (generatedCourse) {
