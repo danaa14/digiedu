@@ -68,13 +68,35 @@ export function CreateCourseModal({ open, onOpenChange, onCourseCreated }: Creat
     if (data?.success && data.course) {
       const aiCourse = data.course
 
-      const chapters = (aiCourse.chapters || []).map((ch: any, idx: number) => ({
-        id: `chapter-${idx + 1}`,
-        title: ch.title,
-        content: "",
-        order: ch.order ?? idx + 1,
-        isCompleted: false,
-      }))
+      console.log("[v0] Raw API chapters:", aiCourse.chapters);
+      
+      const chapters = (aiCourse.chapters || []).map((ch: any, idx: number) => {
+        console.log(`[v0] Processing chapter ${idx + 1}:`, ch);
+        
+        // If we get a string instead of an object, create a template chapter
+        if (typeof ch === "string") {
+          console.log(`[v0] Chapter ${idx + 1} is string:`, ch);
+          return {
+            id: `chapter-${idx + 1}`,
+            title: ch,
+            content: "Content will be generated when you open this chapter.",
+            order: idx + 1,
+            isCompleted: false,
+          };
+        }
+        
+        // Otherwise use the chapter object from the API
+        const chapter = {
+          id: `chapter-${idx + 1}`,
+          title: ch.title,
+          content: ch.content || "Content will be generated when you open this chapter.",
+          order: ch.order || idx + 1,
+          isCompleted: false,
+        };
+        
+        console.log(`[v0] Processed chapter ${idx + 1}:`, chapter);
+        return chapter;
+      })
 
       const mockGenerated: Course = {
         id: Date.now().toString(),
