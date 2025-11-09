@@ -25,7 +25,7 @@ export const mockCourses: Course[] = [
     requirements: "No prior knowledge required.",
     createdAt: new Date("2025-01-15"),
     hobbies: ["Technology", "Reading"],
-    learningStyle: "Hands-on",
+  learningStyle: "Practical / Hands-on",
   },
   {
     id: "2",
