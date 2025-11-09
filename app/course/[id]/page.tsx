@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import ReactMarkdown from "react-markdown"
 import { useParams, useRouter } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
@@ -31,8 +32,11 @@ function CourseDetailContent() {
     const foundCourse = getCourseById(courseId)
 
     if (foundCourse) {
-      console.log("[v0] Course found:", foundCourse.title)
-      if (!foundCourse.chapters) {
+      console.log("[v0] Course found:", foundCourse.title);
+      console.log("[v0] Course chapters:", foundCourse.chapters);
+      
+      if (!foundCourse.chapters?.length) {
+        console.log("[v0] No chapters found, generating templates");
         const chapters = generateChapterTemplates(
           foundCourse.title.replace(" Course", ""),
           foundCourse.difficulty,
@@ -41,8 +45,13 @@ function CourseDetailContent() {
         foundCourse.chapters = chapters
         saveCourse(foundCourse)
       }
+      
+      console.log("[v0] Setting course with chapters:", foundCourse.chapters);
       setCourse(foundCourse)
-      setCurrentChapter(foundCourse.chapters[0])
+      if (foundCourse.chapters && foundCourse.chapters.length > 0) {
+        console.log("[v0] Setting current chapter:", foundCourse.chapters[0]);
+        setCurrentChapter(foundCourse.chapters[0])
+      }
     } else {
       console.log("[v0] Course not found, redirecting to dashboard")
       router.push("/")
@@ -322,7 +331,9 @@ function CourseDetailContent() {
                   )}
 
                   <div className="prose prose-slate max-w-none mb-8">
-                    <div className="whitespace-pre-wrap text-foreground leading-relaxed">{currentChapter.content}</div>
+                    <div className="markdown whitespace-pre-wrap text-foreground leading-relaxed">
+                      <ReactMarkdown>{currentChapter.content}</ReactMarkdown>
+                    </div>
                   </div>
 
                   <div className="flex gap-3 pt-6 border-t border-border">

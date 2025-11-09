@@ -71,14 +71,20 @@ export function getAllCourses(): Course[] {
   if (typeof window === "undefined") return mockCourses
 
   const stored = localStorage.getItem("user-courses")
+  console.log("[v0] Raw stored courses:", stored);
+  
   if (!stored) return mockCourses
 
   try {
     const userCourses = JSON.parse(stored) as Course[]
+    console.log("[v0] Parsed user courses:", userCourses);
+    
     // Merge user courses with mock courses, user courses take priority
     const mockCoursesMap = new Map(mockCourses.map((c) => [c.id, c]))
     userCourses.forEach((c) => mockCoursesMap.set(c.id, c))
-    return Array.from(mockCoursesMap.values())
+    const allCourses = Array.from(mockCoursesMap.values())
+    console.log("[v0] All courses after merge:", allCourses);
+    return allCourses;
   } catch {
     return mockCourses
   }
@@ -96,14 +102,32 @@ export function saveCourse(course: Course) {
   const index = courses.findIndex((c) => c.id === course.id)
 
   if (index >= 0) {
-    courses[index] = course
+    courses[index] = {
+      ...courses[index],
+      ...course,
+      chapters: course.chapters?.map(ch => ({
+        ...ch,
+        content: ch.content || "Content will be generated when you open this chapter."
+      }))
+    }
   } else {
-    courses.push(course)
+    courses.push({
+      ...course,
+      chapters: course.chapters?.map(ch => ({
+        ...ch,
+        content: ch.content || "Content will be generated when you open this chapter."
+      }))
+    })
   }
 
   // Save all user-created courses (not mock courses)
   const userCourses = courses.filter((c) => !["1", "2", "3"].includes(c.id))
-  localStorage.setItem("user-courses", JSON.stringify(userCourses))
+  try {
+    localStorage.setItem("user-courses", JSON.stringify(userCourses))
+    console.log("[v0] Saved course data successfully:", course.id)
+  } catch (error) {
+    console.error("[v0] Error saving course data:", error)
+  }
 }
 
 export function deleteCourse(id: string) {
