@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { BookOpen, Trophy, Target, Flame, Star, Clock, TrendingUp, Award } from "lucide-react"
 import { getAllCourses } from "@/lib/data"
+import type { Course } from "@/lib/types"
 import { AuthGuard } from "@/components/auth-guard"
 import { useAuth } from "@/lib/auth-context"
 import { Progress } from "@/components/ui/progress"
@@ -13,7 +14,7 @@ import { useState, useEffect } from "react"
 
 function ProfileContent() {
   const { user } = useAuth()
-  const [courses, setCourses] = useState<any[]>([])
+  const [courses, setCourses] = useState<Course[]>([])
 
   useEffect(() => {
     setCourses(getAllCourses())
@@ -44,16 +45,13 @@ function ProfileContent() {
   )
 
   const allHobbies = courses.flatMap((course) => course.hobbies)
-  const hobbyCount = allHobbies.reduce(
-    (acc, hobby) => {
-      acc[hobby] = (acc[hobby] || 0) + 1
-      return acc
-    },
-    {} as Record<string, number>,
-  )
+  const hobbyCount = allHobbies.reduce((acc: Record<string, number>, hobby: string) => {
+    acc[hobby] = (acc[hobby] || 0) + 1
+    return acc
+  }, {})
 
-  const favoriteHobbies = Object.entries(hobbyCount)
-    .sort((a, b) => b[1] - a[1])
+  const favoriteHobbies = Object.entries(hobbyCount as Record<string, number>)
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, 5)
 
   const quizBadgesEarned = courses.filter((c) => c.badgeEarned).length
