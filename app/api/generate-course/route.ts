@@ -10,28 +10,30 @@ interface GenerateCourseRequest {
   learningStyle?: string
 }
 
-// Prefer Node runtime while testing (Edge can cause issues)
+// Schema for course validation
+const courseSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  chapters: z.array(
+    z.object({
+      title: z.string(),
+      order: z.number(),
+      content: z.string(),
+    })
+  ),
+  learningOutcomes: z.array(z.string()),
+})
+
 export const runtime = "nodejs"
 
 export async function POST(request: NextRequest) {
   try {
+    // Parse request body
     const body: GenerateCourseRequest = await request.json()
     const { topic, level, hobbies, learningStyle } = body
 
+    // Get chapter count based on difficulty
     const chapterCount = getChapterCountForDifficulty(level as "Beginner" | "Intermediate" | "Advanced")
-
-    const courseSchema = z.object({
-      title: z.string(),
-      description: z.string(),
-      chapters: z.array(
-        z.object({
-          title: z.string(),
-          order: z.number(),
-          content: z.string().optional(), // Make content optional to match the Course type
-        }),
-      ),
-      learningOutcomes: z.array(z.string()),
-    })
 
     // Ensure API key is provided
     if (!process.env.OPENAI_API_KEY) {
@@ -102,43 +104,50 @@ Important:
 
 Remember: Generate COMPLETE chapter content, not just descriptions.`
 
-    console.log("[v0] Sending prompts to OpenAI:", {
-      systemPrompt,
-      userPrompt,
-      model,
-    });
+    console.log("[v0] Generating course content using", model)
 
     const completion = await client.chat.completions.create({
-      model,
+      model: "gpt-3.5-turbo-16k",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: userPrompt }
       ],
       temperature: 0.7,
-      max_tokens: 3000,  // Increased token limit for more content
+      max_tokens: 4000,
+      presence_penalty: 0.3,
+      frequency_penalty: 0.3
     })
 
     const text = completion.choices?.[0]?.message?.content ?? ""
-    console.log("[v0] Raw OpenAI response:", text);
-
-    // Parse JSON safely
-    let parsed: any = null
+    console.log("[v0] Received response length:", text.length)
+    
+    // Parse JSON
+    let parsed: any
     try {
       parsed = JSON.parse(text)
-    } catch (err) {
+      console.log("[v0] Successfully parsed JSON")
+    } catch (error) {
+      console.error("[v0] Failed to parse JSON directly:", error)
+      
+      // Try to extract JSON from text
       const match = text.match(/\{[\s\S]*\}/)
-      if (match) {
-        try {
-          parsed = JSON.parse(match[0])
-        } catch (err) {
-          throw new Error("Model did not return valid JSON.")
-        }
-      } else {
-        throw new Error("Model did not return valid JSON.")
+      if (!match) {
+        console.error("[v0] No JSON found in:", text)
+        throw new Error("No JSON found in response")
+      }
+
+      try {
+        parsed = JSON.parse(match[0])
+        console.log("[v0] Successfully parsed extracted JSON")
+      } catch (extractError) {
+        console.error("[v0] Failed to parse extracted JSON:", extractError)
+        throw new Error("Invalid JSON in response")
       }
     }
 
+    // Validate response
     const result = courseSchema.parse(parsed)
+    console.log("[v0] Validated response schema")
 
     // Validate chapter content
     const validationErrors: string[] = [];
@@ -156,13 +165,12 @@ Remember: Generate COMPLETE chapter content, not just descriptions.`
       throw new Error("Generated content did not meet requirements: " + validationErrors.join(", "));
     }
 
-    // Debug log the generated course structure
-    console.log("[v0] Generated course structure:", JSON.stringify(result, null, 2));
-    console.log("[v0] Chapters content lengths:", result.chapters.map(ch => ({
-      title: ch.title,
-      contentLength: ch.content?.length || 0,
-      hasMarkdown: ch.content?.includes("##") || false
-    })));
+    // Log success details
+    console.log("[v0] Generated course:", {
+      title: result.title,
+      chaptersCount: result.chapters.length,
+      contentLengths: result.chapters.map(ch => ch.content.length)
+    });
 
     return NextResponse.json({ course: result, success: true })
   } catch (error: any) {

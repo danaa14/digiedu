@@ -1,3 +1,14 @@
+export interface Comment {
+  id: string
+  postId: string
+  author: {
+    name: string
+    avatar: string
+  }
+  content: string
+  timestamp: Date
+}
+
 export interface CommunityPost {
   id: string
   author: {
@@ -12,7 +23,7 @@ export interface CommunityPost {
   hashtags: string[]
   progress: number
   likes: number
-  comments: number
+  comments: Comment[]
   timestamp: Date
 }
 
@@ -26,7 +37,7 @@ export const mockCommunityPosts: CommunityPost[] = [
     hashtags: ["photography", "progress", "learning"],
     progress: 65,
     likes: 24,
-    comments: 8,
+    comments: [],
     timestamp: new Date("2025-01-08T10:30:00"),
   },
   {
@@ -38,7 +49,7 @@ export const mockCommunityPosts: CommunityPost[] = [
     hashtags: ["webdev", "gaming", "milestone"],
     progress: 30,
     likes: 15,
-    comments: 5,
+    comments: [],
     timestamp: new Date("2025-01-08T09:15:00"),
   },
   {
@@ -50,7 +61,7 @@ export const mockCommunityPosts: CommunityPost[] = [
     hashtags: ["language", "spanish", "cooking"],
     progress: 85,
     likes: 42,
-    comments: 12,
+    comments: [],
     timestamp: new Date("2025-01-08T08:45:00"),
   },
   {
@@ -62,7 +73,7 @@ export const mockCommunityPosts: CommunityPost[] = [
     hashtags: ["datascience", "career", "progress"],
     progress: 50,
     likes: 31,
-    comments: 6,
+    comments: [],
     timestamp: new Date("2025-01-07T16:20:00"),
   },
   {
@@ -73,7 +84,7 @@ export const mockCommunityPosts: CommunityPost[] = [
     hashtags: ["wellness", "yoga", "mindfulness"],
     progress: 95,
     likes: 56,
-    comments: 18,
+    comments: [],
     timestamp: new Date("2025-01-07T14:10:00"),
   },
 ]
@@ -91,6 +102,10 @@ export function loadPosts(): CommunityPost[] {
       const parsed = JSON.parse(saved)
       return parsed.map((p: any) => ({
         ...p,
+        comments: Array.isArray(p.comments) ? p.comments.map((c: any) => ({
+          ...c,
+          timestamp: new Date(c.timestamp)
+        })) : [],
         timestamp: new Date(p.timestamp),
       }))
     }

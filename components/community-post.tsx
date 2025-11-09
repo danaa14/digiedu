@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Heart, MessageCircle } from "lucide-react"
-import type { CommunityPost } from "@/lib/community-data"
+import type { CommunityPost, Comment } from "@/lib/community-data"
+import { loadPosts, savePosts } from "@/lib/community-data"
 import { cn } from "@/lib/utils"
+import { CommentModal } from "@/components/comment-modal"
 import { useState } from "react"
 
 interface CommunityPostCardProps {
@@ -23,6 +25,7 @@ const difficultyColors = {
 export function CommunityPostCard({ post }: CommunityPostCardProps) {
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(post.likes)
+  const [showCommentModal, setShowCommentModal] = useState(false)
 
   const handleLike = () => {
     if (liked) {
@@ -31,6 +34,23 @@ export function CommunityPostCard({ post }: CommunityPostCardProps) {
       setLikeCount((prev) => prev + 1)
     }
     setLiked(!liked)
+  }
+
+  const [comments, setComments] = useState(post.comments)
+
+  const handleCommentSubmit = (comment: Comment) => {
+    const updatedPosts = loadPosts().map((p: CommunityPost) => {
+      if (p.id === post.id) {
+        return {
+          ...p,
+          comments: Array.isArray(p.comments) ? [...p.comments, comment] : [comment],
+        }
+      }
+      return p
+    })
+    savePosts(updatedPosts)
+    // Update local state to show the new comment immediately
+    setComments(prev => Array.isArray(prev) ? [...prev, comment] : [comment])
   }
 
   const timeAgo = (date: Date) => {
@@ -89,6 +109,27 @@ export function CommunityPostCard({ post }: CommunityPostCardProps) {
         <Progress value={post.progress} className="h-2" />
       </div>
 
+      {/* Comments */}
+      {comments.length > 0 && (
+        <div className="mb-4 space-y-3 pt-4 border-t border-border">
+          <h4 className="font-medium">Comments</h4>
+          {comments.map((comment) => (
+            <div key={comment.id} className="flex items-start gap-3">
+              <Avatar className="w-8 h-8">
+                <AvatarFallback className="text-xs">{comment.author.avatar}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-medium text-sm">{comment.author.name}</span>
+                  <span className="text-xs text-muted-foreground">{timeAgo(comment.timestamp)}</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">{comment.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex items-center gap-4 pt-2 border-t border-border">
         <Button
@@ -100,11 +141,18 @@ export function CommunityPostCard({ post }: CommunityPostCardProps) {
           <Heart className={cn("w-4 h-4", liked && "fill-current")} />
           <span>{likeCount}</span>
         </Button>
-        <Button variant="ghost" size="sm" className="gap-2">
+        <Button variant="ghost" size="sm" className="gap-2" onClick={() => setShowCommentModal(true)}>
           <MessageCircle className="w-4 h-4" />
-          <span>{post.comments}</span>
+          <span>{comments.length}</span>
         </Button>
       </div>
+
+      <CommentModal 
+        open={showCommentModal} 
+        onOpenChange={setShowCommentModal}
+        postId={post.id}
+        onCommentSubmit={handleCommentSubmit}
+      />
     </Card>
   )
 }
