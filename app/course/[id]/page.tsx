@@ -15,6 +15,7 @@ import type { Course, Chapter, Quiz } from "@/lib/types"
 import { ArrowLeft, BookOpen, CheckCircle2, Circle, Sparkles, Loader2, Award, Trophy } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { QuizModal } from "@/components/quiz-modal"
+import { WordSelector } from "@/components/word-selector" 
 
 function CourseDetailContent() {
   const params = useParams()
@@ -330,10 +331,8 @@ function CourseDetailContent() {
                     </div>
                   )}
 
-                  <div className="prose prose-slate max-w-none mb-8">
-                    <div className="markdown whitespace-pre-wrap text-foreground leading-relaxed">
-                      <ReactMarkdown>{currentChapter.content}</ReactMarkdown>
-                    </div>
+                  <div className="mb-8">
+                    <WordSelector content={currentChapter.content} chapterId={currentChapter.id} courseId={course.id} />
                   </div>
 
                   <div className="flex gap-3 pt-6 border-t border-border">
